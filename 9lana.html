@@ -208,7 +208,11 @@ section { scroll-margin-top: var(--bar-h); }
 .poster {
   position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer;
   background: radial-gradient(80% 80% at 50% 30%, color-mix(in oklab, var(--accent) 35%, var(--stage-2)), var(--stage-2));
-  display: grid; place-items: center;
+  display: grid; place-items: center; align-content: center; gap: 1rem; text-decoration: none;
+}
+.poster-label {
+  position: relative; font: 500 .76rem var(--mono); text-transform: uppercase; letter-spacing: .08em;
+  background: var(--ink); color: var(--paper); padding: .6rem 1rem; border-radius: 999px;
 }
 .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: scale .5s, opacity .3s; }
 .poster:hover img { scale: 1.03; opacity: .85; }
@@ -224,24 +228,26 @@ section { scroll-margin-top: var(--bar-h); }
 .now-label { font: 400 .72rem var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--accent); flex-basis: 100%; }
 .now h3 { font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.2; }
 .now-note { color: var(--mute); font-size: .95rem; flex-basis: 100%; }
+.now-hint { flex-basis: 100%; font-size: .9rem; line-height: 1.5; color: var(--paper); border-left: 2px solid var(--accent); padding-left: .75rem; margin-top: .35rem; }
+.now-hint:empty { display: none; }
 .out { font: 400 .78rem var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--paper); text-underline-offset: .3em; text-decoration-color: var(--accent); }
 .out:hover { color: var(--accent); }
 
 .prog-title { font: 400 .72rem var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--mute); padding-bottom: .75rem; border-bottom: 1px solid var(--line); }
 .programme { list-style: none; margin: 0; padding: 0; max-height: min(34rem, 70vh); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.programme button {
+.programme a {
   width: 100%; display: grid; grid-template-columns: 1.6rem 4.6rem minmax(0, 1fr); gap: .75rem; align-items: center;
-  padding: .6rem .5rem .6rem 0; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; text-align: left;
+  padding: .6rem .5rem .6rem 0; border-bottom: 1px solid var(--line); text-decoration: none; cursor: pointer;
   transition: background .2s;
 }
-.programme button:hover { background: color-mix(in oklab, var(--paper) 5%, transparent); }
+.programme a:hover { background: color-mix(in oklab, var(--paper) 5%, transparent); }
 .programme .n { font: 400 .72rem var(--mono); color: var(--mute); text-align: right; }
 .programme .th { aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; background: var(--stage-2); }
 .programme .th img { width: 100%; height: 100%; object-fit: cover; }
 .programme .t { display: block; font-weight: 700; font-size: .98rem; line-height: 1.3; overflow-wrap: anywhere; }
 .programme .s { display: block; font-size: .78rem; line-height: 1.35; color: var(--mute); }
-.programme button[aria-current="true"] .t, .programme button[aria-current="true"] .n { color: var(--accent); }
-.programme button[aria-current="true"] .th { outline: 2px solid var(--accent); outline-offset: 1px; }
+.programme a[aria-current="true"] .t, .programme a[aria-current="true"] .n { color: var(--accent); }
+.programme a[aria-current="true"] .th { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---------- 四 Disques ---------- */
 .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
@@ -271,7 +277,7 @@ section { scroll-margin-top: var(--bar-h); }
 .acts { display: flex; gap: .4rem; align-self: center; justify-content: flex-end; min-width: 5.4rem; }
 .icon-btn {
   width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--line); background: none; cursor: pointer;
-  display: grid; place-items: center; transition: border-color .2s, color .2s, background .2s;
+  display: grid; place-items: center; text-decoration: none; transition: border-color .2s, color .2s, background .2s;
 }
 .icon-btn svg { width: 1rem; height: 1rem; }
 .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -512,7 +518,7 @@ footer a:hover { color: var(--accent); }
       <div class="sec-head">
         <span class="sec-num" lang="ja" aria-hidden="true">三</span>
         <h2>Clips</h2>
-        <p class="sec-sub">Les vidéos officielles de sa chaîne YouTube. Choisis un titre dans le programme, il se lance ici.</p>
+        <p class="sec-sub">Les vidéos officielles de sa chaîne YouTube. Choisis un titre dans le programme pour le lancer.</p>
       </div>
       <div class="theatre">
         <div>
@@ -522,6 +528,7 @@ footer a:hover { color: var(--accent); }
             <h3 id="now-title"></h3>
             <a class="out" id="now-link" href="https://www.youtube.com/@9Lana_official" target="_blank" rel="noopener">Ouvrir sur YouTube ↗</a>
             <p class="now-note" id="now-note"></p>
+            <p class="now-hint" id="now-hint" aria-live="polite"></p>
           </div>
         </div>
         <div>
@@ -732,16 +739,43 @@ footer a:hover { color: var(--accent); }
   const programme = $("#programme");
   const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
 
-  function showClip(clip, autoplay) {
+  const watchUrl = (clip) => `https://www.youtube.com/watch?v=${clip.yt}`;
+  const YT_EMBED = "https://www.youtube-nocookie.com";
+
+  // YouTube ne lit une vidéo intégrée que sur une vraie page web. Fichier ouvert depuis le disque ou
+  // aperçu en bac à sable : la lecture est refusée, alors chaque clip s'ouvre directement sur YouTube.
+  let embedOk = /^https?:$/.test(location.protocol) && window.origin !== "null";
+  let current = null; // clip affiché
+  let player = null;  // lecteur intégré en cours : { frame, clip, hello, ping }
+
+  function stopPlayer() {
+    if (player) clearInterval(player.ping);
+    player = null;
+  }
+
+  function showClip(clip, play) {
+    stopPlayer();
+    current = clip;
+    const inline = embedOk && !clip.noEmbed;
     screen.replaceChildren();
-    if (autoplay) {
-      screen.append(el("iframe", {
-        src: `https://www.youtube-nocookie.com/embed/${clip.yt}?autoplay=1&rel=0&hl=fr`,
+    if (play && inline) {
+      const frame = el("iframe", {
+        src: `${YT_EMBED}/embed/${clip.yt}?autoplay=1&rel=0&hl=fr&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`,
         title: `Clip : ${clip.t}`,
         allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
         allowfullscreen: true,
         referrerpolicy: "strict-origin-when-cross-origin",
-      }));
+      });
+      screen.append(frame);
+      // On demande au lecteur de signaler ses erreurs, pour proposer YouTube si la lecture est refusée.
+      const say = (msg) => {
+        try { frame.contentWindow.postMessage(JSON.stringify({ ...msg, id: "9lana", channel: "widget" }), "*"); }
+        catch { /* cadre pas encore prêt */ }
+      };
+      const hello = () => { say({ event: "listening" }); say({ event: "command", func: "addEventListener", args: ["onError"] }); };
+      const me = { frame, clip, hello, tries: 0 };
+      me.ping = setInterval(() => { hello(); if (++me.tries > 40) clearInterval(me.ping); }, 500);
+      player = me;
     } else {
       const img = el("img", { src: `https://i.ytimg.com/vi/${clip.yt}/maxresdefault.jpg`, alt: "", loading: "lazy", decoding: "async" });
       // YouTube renvoie une vignette grise de 120 px quand la grande n'existe pas.
@@ -752,37 +786,67 @@ footer a:hover { color: var(--accent); }
         }
       });
       img.addEventListener("error", () => img.remove());
-      screen.append(el("button", { class: "poster", type: "button", "aria-label": `Lire le clip : ${clip.t}`, onclick: () => showClip(clip, true) },
-        img, el("span", { class: "play-big", html: PLAY_ICON })));
+      screen.append(el("a", {
+        class: "poster", href: watchUrl(clip), target: "_blank", rel: "noopener",
+        "aria-label": inline ? `Lire le clip : ${clip.t}` : `Regarder ${clip.t} sur YouTube (nouvel onglet)`,
+        onclick: (e) => pick(e, clip),
+      }, img, el("span", { class: "play-big", html: PLAY_ICON }), inline ? null : el("span", { class: "poster-label" }, "Regarder sur YouTube ↗")));
     }
     const title = $("#now-title");
     title.textContent = clip.t;
     if (ja(clip.t)) title.lang = "ja"; else title.removeAttribute("lang");
     $("#now-note").textContent = clip.n;
-    $("#now-link").href = `https://www.youtube.com/watch?v=${clip.yt}`;
-    $$("button", programme).forEach((b) => {
-      if (b.dataset.yt === clip.yt) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    $("#now-link").href = watchUrl(clip);
+    $("#now-hint").textContent = !embedOk
+      ? "Ici, YouTube ne permet pas la lecture dans la page : les clips s'ouvrent sur YouTube, dans un nouvel onglet."
+      : clip.noEmbed ? "YouTube refuse de lire ce clip dans la page. Il s'ouvre sur YouTube à la place." : "";
+    $$("a", programme).forEach((a) => {
+      if (a.dataset.yt === clip.yt) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
     });
   }
+
+  // Clic sur un clip : lecture dans la page si c'est possible, sinon on laisse le lien ouvrir YouTube.
+  function pick(e, clip, scroll) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; // ouverture dans un nouvel onglet voulue
+    const inline = embedOk && !clip.noEmbed;
+    if (inline) e.preventDefault();
+    showClip(clip, inline);
+    if (inline && scroll) screen.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  }
+
+  // Le lecteur YouTube répond par message : une erreur (vidéo refusée, page non reconnue…) bascule sur le lien.
+  window.addEventListener("message", (e) => {
+    if (!player || e.source !== player.frame.contentWindow || e.origin !== YT_EMBED) return;
+    let data;
+    try { data = typeof e.data === "string" ? JSON.parse(e.data) : e.data; } catch { return; }
+    if (!data) return;
+    if (data.event === "onReady" || data.event === "initialDelivery") { clearInterval(player.ping); player.hello(); }
+    if (data.event === "onError") {
+      const { clip } = player;
+      clip.noEmbed = true;
+      // 153 : c'est la page que YouTube refuse, pas la vidéo. Deux clips refusés de suite : même conclusion.
+      if (data.info === 153 || CLIPS.filter((c) => c.noEmbed).length >= 2) embedOk = false;
+      showClip(clip, false);
+    }
+  });
+  // Certains aperçus interdisent carrément les cadres externes.
+  document.addEventListener("securitypolicyviolation", (e) => {
+    if (!/youtube/.test(e.blockedURI || "")) return;
+    embedOk = false;
+    if (current) showClip(current, false);
+  });
 
   CLIPS.forEach((clip, i) => {
     const thumb = el("img", { src: `https://i.ytimg.com/vi/${clip.yt}/mqdefault.jpg`, alt: "", loading: "lazy", decoding: "async" });
     thumb.addEventListener("error", () => thumb.remove());
     programme.append(el("li", {},
-      el("button", { type: "button", "data-yt": clip.yt, onclick: () => showClip(clip, true) },
+      el("a", { href: watchUrl(clip), target: "_blank", rel: "noopener", "data-yt": clip.yt, onclick: (e) => pick(e, clip) },
         el("span", { class: "n" }, String(i + 1).padStart(2, "0")),
         el("span", { class: "th" }, thumb),
         el("span", {}, el("span", { class: "t", lang: ja(clip.t) }, clip.t), el("span", { class: "s" }, clip.n)))));
   });
   $("#prog-count").textContent = CLIPS.length;
   showClip(CLIPS[0], false);
-
-  function playFromDisco(yt) {
-    const clip = clipById.get(yt);
-    if (!clip) return;
-    showClip(clip, true);
-    screen.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
-  }
 
   /* ================= Disques ================= */
   // k : catégories pour les filtres · tag : étiquette affichée · yt : clip associé
@@ -849,7 +913,7 @@ footer a:hover { color: var(--accent); }
           x.s ? el("p", { class: "sub" }, x.s) : null),
         note,
         el("div", { class: "acts" },
-          x.yt ? el("button", { class: "icon-btn", type: "button", "aria-label": `Voir le clip de ${x.t}`, title: "Voir le clip", html: PLAY_ICON, onclick: () => playFromDisco(x.yt) }) : null,
+          x.yt ? el("a", { class: "icon-btn", href: watchUrl(clipById.get(x.yt)), target: "_blank", rel: "noopener", "aria-label": `Voir le clip de ${x.t}`, title: "Voir le clip", html: PLAY_ICON, onclick: (e) => pick(e, clipById.get(x.yt), true) }) : null,
           el("button", {
             class: "icon-btn fav", type: "button", "aria-pressed": String(isFav),
             "aria-label": `${isFav ? "Retirer" : "Ajouter"} ${x.t} ${isFav ? "des" : "aux"} favoris`,
